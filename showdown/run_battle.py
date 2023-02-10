@@ -4,6 +4,7 @@ import asyncio
 import concurrent.futures
 from copy import deepcopy
 import logging
+import random
 
 import data
 from data.helpers import get_standard_battle_sets
@@ -170,8 +171,19 @@ async def start_battle(ps_websocket_client, pokemon_battle_type):
         battle = await start_random_battle(ps_websocket_client, pokemon_battle_type)
     else:
         battle = await start_standard_battle(ps_websocket_client, pokemon_battle_type)
+    
+    opponent_pkmn_names = [p.name for p in battle.opponent.reserve]
+    random_poke = random.choice(opponent_pkmn_names)
+    random_toxic_messages = ["time to get wrecked noob",
+                            "not tired of losing yet?", 
+                             "you think that team is good enough?", 
+                             "your " + random_poke + " doesn't scare me",
+                             "what's your ELO again?",
+                             "what a waste of my time battling you",
+                             "if you hax me I'll call the mods",
+                             "what a scrub looking team"]
 
-    await ps_websocket_client.send_message(battle.battle_tag, ["hf"])
+    await ps_websocket_client.send_message(battle.battle_tag, [random_toxic_messages[3]])
     await ps_websocket_client.send_message(battle.battle_tag, ['/timer on'])
 
     return battle
