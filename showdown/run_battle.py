@@ -183,7 +183,7 @@ async def start_battle(ps_websocket_client, pokemon_battle_type):
                              "if you hax me I'll call the mods",
                              "what a scrub looking team"]
 
-    await ps_websocket_client.send_message(battle.battle_tag, [random_toxic_messages[3]])
+    await ps_websocket_client.send_message(battle.battle_tag, [random.choice(random_toxic_messages)])
     await ps_websocket_client.send_message(battle.battle_tag, ['/timer on'])
 
     return battle
