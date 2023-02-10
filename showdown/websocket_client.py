@@ -3,6 +3,10 @@ import websockets
 import requests
 import json
 import time
+import html2text
+
+from teams import load_team
+import requests
 
 import logging
 logger = logging.getLogger(__name__)
@@ -128,7 +132,48 @@ class PSWebsocketClient:
         username = None
         while username is None:
             msg = await self.receive_message()
+            # while waiting for accepting a challenge, first see if we get any pokepaste links.
             split_msg = msg.split('|')
+            if(len(split_msg) == 6 and split_msg[1] == "pm" and split_msg[4] == "pokepaste"):
+                user = split_msg[2].strip()
+                # check for valid pokepaste link
+                pokepaste_link = split_msg[5]
+                # check the poke-paste link is valid
+                url = pokepaste_link
+                response = requests.get(url)
+                if response.status_code == 200:
+                    await self.send_message('', ["/msg " + user + ", updating pokepaste team..."])
+                    set = html2text.html2text(response.text)
+                    lines = set.split('\n')
+                    lines = lines[1:-12]
+                    lines = [line.strip() for line in lines]
+                    for word in lines[:]:
+                        if word == '':
+                            lines.remove(word)
+                        elif word.startswith("!"):
+                            lines.remove(word)
+
+                    # we removed all the lines, but now we need to add back the lines between pokemon.
+                    newline_inserts = []
+                    for idx in range(0, len(lines)-1):
+                        line = lines[idx]
+                        next_line = lines[idx+1]
+                        if line.startswith("-") and (not next_line.startswith("-")):
+                            # we have a new pokemon!
+                            newline_inserts.append(idx+1)
+                    for idx in range(0, len(newline_inserts)):
+                        lines.insert(newline_inserts[idx]+idx, "")
+                    
+                    set = "\n".join(lines).strip()
+                    f = open("teams/teams/gen9/qpl5/paste", "w")
+                    f.write(set)
+                    f.close()
+                    team = load_team("gen9/qpl5/paste")
+                    await self.update_team("gen9qpl5", team)
+                    await self.send_message('', ["/msg " + user + ", updated!"])
+                else:
+                    await self.send_message('', ["/msg " + user + ", error updating team."])
+
             if (
                 len(split_msg) == 9 and
                 split_msg[1] == "pm" and
