@@ -157,7 +157,8 @@ class PSWebsocketClient:
                     await self.send_message('', ["/msg " + user + ", downloading pokepaste team..."])
                     set = html2text.html2text(response.text)
                     lines = set.split('\n')
-                    lines = lines[1:-7]
+                    last_move = max([idx for idx, val in enumerate(lines) if val.strip().startswith("-")])
+                    lines = lines[1:last_move]
                     lines = [line.strip() for line in lines]
                     for word in lines[:]:
                         if word == '':
@@ -183,7 +184,7 @@ class PSWebsocketClient:
                     team = load_team("gen9/qpl5/paste")
                     await self.update_team("gen9qpl5", team)
                     await self.validate_team("gen9qpl5")
-                    await self.send_message('', ["/msg " + user + ", downloading!"])
+                    await self.send_message('', ["/msg " + user + ", downloaded!"])
                 else:
                     await self.send_message('', ["/msg " + user + ", error downloading team."])
             
