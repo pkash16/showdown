@@ -28,6 +28,8 @@ class PSWebsocketClient:
     username = None
     password = None
     last_message = None
+    last_received_message = None
+    last_user = None
     last_challenge_time = 0
 
     @classmethod
@@ -48,6 +50,7 @@ class PSWebsocketClient:
     async def receive_message(self):
         message = await self.websocket.recv()
         logger.debug("Received message from websocket: {}".format(message))
+        self.last_received_message = message
         return message
 
     async def send_message(self, room, message_list):
@@ -136,6 +139,7 @@ class PSWebsocketClient:
             split_msg = msg.split('|')
             if(len(split_msg) == 6 and split_msg[1] == "pm" and split_msg[4] == "pokepaste"):
                 user = split_msg[2].strip()
+                self.last_user = user
                 # check for valid pokepaste link
                 pokepaste_link = split_msg[5]
                 # check the poke-paste link is valid

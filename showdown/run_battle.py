@@ -63,6 +63,7 @@ async def handle_team_preview(battle, ps_websocket_client):
 
 
 async def get_battle_tag_and_opponent(ps_websocket_client: PSWebsocketClient):
+    # check for error in the team building process.
     while True:
         msg = await ps_websocket_client.receive_message()
         split_msg = msg.split('|')
@@ -72,12 +73,17 @@ async def get_battle_tag_and_opponent(ps_websocket_client: PSWebsocketClient):
             user_name = split_msg[-1].replace('☆', '').strip()
             opponent_name = split_msg[4].replace(user_name, '').replace('vs.', '').strip()
             return battle_tag, opponent_name
+        if 'popup' in split_msg[1]:
+            # we have a team error issue.
+            return False, msg
 
 
 async def initialize_battle_with_tag(ps_websocket_client: PSWebsocketClient, set_request_json=True):
     battle_module = importlib.import_module('showdown.battle_bots.{}.main'.format(ShowdownConfig.battle_bot_module))
 
     battle_tag, opponent_name = await get_battle_tag_and_opponent(ps_websocket_client)
+    if battle_tag == False:
+        return False, False, False
     while True:
         msg = await ps_websocket_client.receive_message()
         split_msg = msg.split('|')
@@ -128,6 +134,10 @@ async def start_random_battle(ps_websocket_client: PSWebsocketClient, pokemon_ba
 
 async def start_standard_battle(ps_websocket_client: PSWebsocketClient, pokemon_battle_type):
     battle, opponent_id, user_json = await initialize_battle_with_tag(ps_websocket_client, set_request_json=False)
+
+    if battle == False:
+        return False
+
     battle.battle_type = constants.STANDARD_BATTLE
     battle.generation = pokemon_battle_type[:4]
 
@@ -171,6 +181,8 @@ async def start_battle(ps_websocket_client, pokemon_battle_type):
         battle = await start_random_battle(ps_websocket_client, pokemon_battle_type)
     else:
         battle = await start_standard_battle(ps_websocket_client, pokemon_battle_type)
+        if battle == False:
+            return False
     
     opponent_pkmn_names = [p.name for p in battle.opponent.reserve]
     random_poke = random.choice(opponent_pkmn_names)
@@ -191,6 +203,11 @@ async def start_battle(ps_websocket_client, pokemon_battle_type):
 
 async def pokemon_battle(ps_websocket_client, pokemon_battle_type):
     battle = await start_battle(ps_websocket_client, pokemon_battle_type)
+
+    # keep checking until we get valid stuff.
+    if battle == False:
+        return battle
+
     while True:
         msg = await ps_websocket_client.receive_message()
         if battle_is_finished(battle.battle_tag, msg):

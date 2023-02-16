@@ -87,6 +87,9 @@ async def showdown():
         winner = await pokemon_battle(ps_websocket_client, ShowdownConfig.pokemon_mode)
         if winner == ShowdownConfig.username:
             wins += 1
+        elif winner == False:
+            # send a message to the user....
+            await ps_websocket_client.send_message('', ["/msg " + ps_websocket_client.last_user + ", " + ps_websocket_client.last_received_message])
         else:
             losses += 1
 
