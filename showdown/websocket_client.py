@@ -145,7 +145,7 @@ class PSWebsocketClient:
                     await self.send_message('', ["/msg " + user + ", updating pokepaste team..."])
                     set = html2text.html2text(response.text)
                     lines = set.split('\n')
-                    lines = lines[1:-12]
+                    lines = lines[1:-7]
                     lines = [line.strip() for line in lines]
                     for word in lines[:]:
                         if word == '':
