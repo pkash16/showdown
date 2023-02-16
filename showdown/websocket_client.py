@@ -115,6 +115,14 @@ class PSWebsocketClient:
         else:
             message = ["/utm {}".format(team)]
         await self.send_message('', message)
+    
+    async def validate_team(self, battle_format):
+        if "random" in battle_format:
+            logger.info("Setting team to None because the pokemon mode is {}".format(battle_format))
+            message = ["/vtm None"]
+        else:
+            message = ["/vtm " + battle_format]
+        await self.send_message('', message)
 
     async def challenge_user(self, user_to_challenge, battle_format, team):
         logger.debug("Challenging {}...".format(user_to_challenge))
@@ -146,7 +154,7 @@ class PSWebsocketClient:
                 url = pokepaste_link
                 response = requests.get(url)
                 if response.status_code == 200:
-                    await self.send_message('', ["/msg " + user + ", updating pokepaste team..."])
+                    await self.send_message('', ["/msg " + user + ", downloading pokepaste team..."])
                     set = html2text.html2text(response.text)
                     lines = set.split('\n')
                     lines = lines[1:-7]
@@ -174,9 +182,14 @@ class PSWebsocketClient:
                     f.close()
                     team = load_team("gen9/qpl5/paste")
                     await self.update_team("gen9qpl5", team)
-                    await self.send_message('', ["/msg " + user + ", updated!"])
+                    await self.validate_team("gen9qpl5")
+                    await self.send_message('', ["/msg " + user + ", downloading!"])
                 else:
-                    await self.send_message('', ["/msg " + user + ", error updating team."])
+                    await self.send_message('', ["/msg " + user + ", error downloading team."])
+            
+            if split_msg[1] == 'popup':
+                # we got a validation message.
+                 await self.send_message('', ["/msg " + self.last_user + ", " + " ".join(split_msg[2:])])
 
             if (
                 len(split_msg) == 9 and
